@@ -1,0 +1,4 @@
+bytefusion_hours_default:
+    resource: "@BytefusionHoursDefaultBundle/Controller/"
+    type:     annotation
+    prefix:   /
