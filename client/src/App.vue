@@ -8,6 +8,11 @@
             <b>Hours</b>
           </a>
         </div>
+        <div class="nav-right">
+          <div class="nav-item" v-if="$pouch.loading.entries">
+            <span class="icon"><i class="fa fa-refresh"></i></span>
+          </div>
+        </div>
       </div>
     </nav>
     <router-view></router-view>
@@ -21,4 +26,9 @@
 </script>
 
 <style>
+  @media screen and (max-width: 999px) {
+    .nav > .container {
+      width: 100%;
+    }
+  }
 </style>

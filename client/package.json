@@ -10,13 +10,16 @@
     "lint": "eslint --ext .js,.vue src"
   },
   "dependencies": {
+    "@types/pouchdb": "^5.4.28",
     "bulma": "^0.4.0",
-    "dexie": "^1.5.1",
     "font-awesome": "^4.7.0",
     "node-sass": "^4.5.1",
+    "pouchdb-browser": "^6.1.2",
+    "pouchdb-live-find": "^0.3.0",
     "sass-loader": "^6.0.3",
     "vue": "^2.2.2",
     "vue-async-computed": "^3.0.1",
+    "vue-pouch": "^0.0.14",
     "vue-router": "^2.2.0"
   },
   "devDependencies": {

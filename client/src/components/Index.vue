@@ -1,68 +1,67 @@
 <template xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:v-bind="http://www.w3.org/1999/xhtml">
   <div class="container">
-    <a class="button" v-on:click="recalc++">
-      Refresh ({{ recalc }})
-    </a>
-    <table id="entryTable" class="table">
-      <thead>
-      <tr>
-        <th v-on:click="sortBy('title')"><a>
-          <span class="icon"><i v-bind:class="sortIcon('title')"></i></span> Title
-        </a></th>
-        <th v-on:click="sortBy('updatedDate')"><a>
-          <span class="icon"><i v-bind:class="sortIcon('updatedDate')"></i></span> Updated at
-        </a></th>
-        <th></th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="entry in entries">
-        <td>#{{ entry.id }} {{ entry.title }}</td>
-        <td>{{ entry.updatedDate }}</td>
-        <td><span v-on:click="deleteEntry(entry.id)" class="icon">
-          <i class="fa fa-trash-o"></i>
-        </span></td>
-      </tr>
-      </tbody>
-    </table>
+    <section class="section">
+      <div class="field is-grouped">
+        <p class="control is-expanded">
+          <input id="title-input" type="text" class="input" placeholder="Title" v-model="title" v-on:keyup.enter="addEntry(title)">
+        </p>
+        <p class="control">
+          <a class="button is-info" v-on:click="addEntry(title)">Save</a>
+        </p>
+      </div>
+      <table id="entryTable" class="table">
+        <thead>
+        <tr>
+          <th v-on:click="sortBy('title')">
+            <span class="icon"><i v-bind:class="sortIcon('title')"></i></span> Title
+          </th>
+          <th v-on:click="sortBy('updatedDate')">
+            <span class="icon"><i v-bind:class="sortIcon('updatedDate')"></i></span> Updated at
+          </th>
+          <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="entry in entries">
+          <td>{{ entry.title }}</td>
+          <td>{{ entry.created_at }}</td>
+          <td>
+            <span v-on:click="deleteEntry(entry)" class="icon is-pulled-right"><i class="fa fa-trash-o"></i></span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 </template>
 
 <script>
-  import Dexie from 'dexie'
-
-  const db = new Dexie('hours_database')
-  db.version(1).stores({
-    log_entries: '++id,startDate,finishDate,updatedDate,title'
-  })
-
-  window.addEntry = function (title) {
-    db.log_entries.put({
-      title: title,
-      startDate: new Date(),
-      finishDate: null,
-      updatedDate: new Date()
-    }).then(function () {
-      console.log('entry saved')
-    }).catch(function (error) {
-      console.error(error)
-    })
-  }
-
-  window.debugdb = db
-
   export default {
     name: 'index',
     data () {
       return {
-        orderBy: 'updatedDate',
+        title: '',
+        orderBy: 'updated_at',
         reverse: false,
-        page: 1,
-        limit: 10,
-        recalc: 0
+        currentPage: 1,
+        resultsPerPage: 10
       }
     },
     methods: {
+      addEntry () {
+        if (this.title.length < 1) {
+          return
+        }
+        let entry = {
+          title: this.title,
+          created_at: new Date()
+        }
+        this.$pouch.post('entries', entry)
+        this.title = ''
+      },
+      deleteEntry (entry) {
+        this.$pouch.remove('entries', entry)
+      },
       sortBy (property) {
         if (this.orderBy === property) {
           this.reverse = !this.reverse
@@ -73,41 +72,26 @@
       },
       sortIcon (property) {
         if (this.orderBy === property) {
-          console.log('sorted by ' + property)
-          return this.reverse
-            ? 'fa fa-sort-alpha-desc'
-            : 'fa fa-sort-alpha-asc'
+          return this.reverse ? 'fa fa-sort-alpha-desc' : 'fa fa-sort-alpha-asc'
         }
-      },
-      deleteEntry (id) {
-        db.log_entries.where('id').equals(id).delete().then(() => this.recalc++)
       }
     },
-    asyncComputed: {
-      entries () {
-        // Force recalc by making depend on recalc
-        if (this.recalc < 0) {
-          this.recalc = 0
+    pouch: {
+      entries: function () {
+        return {
+          selector: {title: {$exists: true}},
+          sort: [{[this.orderBy]: this.reverse ? 'asc' : 'desc'}],
+          database: 'entries',
+          limit: this.resultsPerPage,
+          skip: this.resultsPerPage * (this.currentPage - 1)
         }
-        let query = db.log_entries
-          .orderBy(this.orderBy)
-          .limit(this.limit)
-          .offset(this.limit * (this.page - 1))
-        if (this.reverse) query.reverse()
-
-        return query
-          .toArray()
-          .then(function (entries) {
-            console.log(entries)
-            return entries
-          })
       }
     }
   }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
+<style>
   #entryTable thead th {
     cursor: pointer;
   }
